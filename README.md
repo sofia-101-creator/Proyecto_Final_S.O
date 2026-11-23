@@ -1,9 +1,7 @@
 # Proyecto final: proxy inverso y observabilidad
 
 ## Integrantes
-- [Nombre completo 1]
-- [Nombre completo 2]
-- [Completar todos los integrantes]
+- Sofía Valencia Ortega
 
 ## Objetivo y arquitectura
 Tres backends Flask identificables, Nginx con Round Robin, Prometheus, Nginx Prometheus Exporter, cAdvisor y Grafana: ocho contenedores en una red bridge personalizada. El cliente entra a Nginx; Prometheus recolecta cada backend directamente, el exportador de Nginx y cAdvisor. Grafana consulta a Prometheus. Los backends no publican puertos.
@@ -28,10 +26,6 @@ bash scripts/verificar.sh
 - Dashboard: http://localhost:3000/d/proyecto-final
 - cAdvisor: http://localhost:8089
 
-No subir `.env` a GitHub. Preparar el archivo antes de ejecutar Compose. Para consultar la clave en privado: `grep GRAFANA_ADMIN_PASSWORD .env`. La variable de entorno inicializa la clave de Grafana solo al crear su base de datos: no cambia automaticamente una clave ya guardada.
-
-## Rutas de la aplicacion
-`/`: identidad y pausa de 30 ms; `/health`: estado; `/headers`: cabeceras; `/slow?ms=500`: pausa controlada; `/metrics`: metricas internas Prometheus. Nginx bloquea la ruta publica `/metrics`; Prometheus accede directamente a app1:5000, app2:5000 y app3:5000.
 
 ## Balanceo
 ```bash
@@ -74,12 +68,39 @@ docker compose exec nginx nginx -t
 docker compose exec nginx nginx -T
 docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml
 ```
-Si falta reparto, contrastar identidad directa con `bash scripts/verificar.sh`, cabeceras X-Upstream y logs. No afirmar que pesos 3:1 explican por si solos un resultado 20:0. Tras recrear backends, validar y recargar Nginx para renovar resolucion DNS: `docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload`.
 
 ## Detener sin borrar datos
 ```bash
 docker compose down
 ```
+## Resultados obtenidos
+
+La validación funcional distribuyó 30 solicitudes en partes iguales:
+10 para server 1, 10 para server 2 y 10 para server 3.
+
+| Indicador | Normal | Lento |
+|---|---:|---:|
+| Solicitudes | 23190 | 4915 |
+| Solicitudes/s | 128.84 | 27.27 |
+| p95 cliente | 38.93 ms | 699.47 ms |
+| p99 cliente | 46.89 ms | 730.74 ms |
+| Fallos HTTP | 0 % | 0 % |
+
+El informe completo está en docs/Informe-final.pdf.
+
+## Adaptación de cAdvisor y limitaciones
+
+En el entorno evaluado con Docker Desktop y WSL2 se configuró cAdvisor
+con pid: host y acceso a containerd mediante
+/proc/1/root/run/containerd/containerd.sock.
+
+Esta ruta es específica del entorno comprobado y podría necesitar
+ajustes en otra instalación. La configuración amplía el acceso al host
+y se utiliza con fines de laboratorio.
+
+Se obtuvieron métricas de CPU y memoria por contenedor.
+La red por contenedor no quedó disponible y la cobertura de disco fue
+parcial. Los paneles sin datos no deben interpretarse como consumo cero.
 
 ## Resultados, informe y video
-Completar `docs/INFORME-PLANTILLA.md` con resultados reales. Exportar el informe final a PDF con todos los integrantes. Video de maximo 10 minutos, cada integrante visible al menos un minuto. Cada integrante entrega PDF, enlace GitHub y enlace del video.
+Todo en docs/Informe-Final.pdf

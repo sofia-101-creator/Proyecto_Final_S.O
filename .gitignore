@@ -3,6 +3,12 @@ __pycache__/
 *.pyc
 resultados/*
 !resultados/.gitkeep
+!resultados/normal.txt
+!resultados/normal.json
+!resultados/slow.txt
+!resultados/slow.json
 evidencias/*
 !evidencias/.gitkeep
 .DS_Store
+*.bak
+*.bak.*
